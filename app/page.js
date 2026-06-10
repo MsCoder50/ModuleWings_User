@@ -1,9 +1,42 @@
 "use client";
 import Image from "next/image";
-import { useEffect, useRef } from "react";
-
+import { useEffect, useRef, useState } from "react";
+import { getNames } from "country-list";
 export default function Home() {
   const logoRef = useRef(null);
+  const nicheDropdownRef = useRef(null);
+  const countryDropdownRef = useRef(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedNiche, setSelectedNiche] = useState("");
+  const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState("");
+
+  const countries = getNames().sort();
+  const niches = [
+    "Gaming", "Tech Review", "Smartphone Review", "AI Content", "Finance Influencers",
+    "Stock Market Educators", "Crypto", "Business & Entrepreneurship", "Motivational Speakers",
+    "Self-Improvement", "Fitness Coaches", "Gym Influencers", "Nutrition Experts",
+    "Doctors & Healthcare", "Educational/Study Channels", "Coding & Programming",
+    "Digital Marketing", "Freelancing Coaches", "E-commerce Educators", "Real Estate Influencers",
+    "Travel Vloggers", "Food Vloggers", "Fashion Influencers", "Beauty & Makeup",
+    "Lifestyle Influencers", "Podcast Hosts", "Interview-Based Channels", "Documentary",
+    "News & Current Affairs", "Personal Branding (CEOs, Founders, Consultants)"
+  ].sort();
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (nicheDropdownRef.current && !nicheDropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+      if (countryDropdownRef.current && !countryDropdownRef.current.contains(event.target)) {
+        setIsCountryDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -80,8 +113,11 @@ export default function Home() {
           {/* Bottom Right Glow Effect */}
           <div className="absolute bottom-[20px] right-[20px] w-[155px] h-[155px] bg-white/80 rounded-full -z-10 blur-[60px]"></div>
 
-          <div className="w-[640px] min-h-[754px] bg-white/[0.1] backdrop-blur-[80px] rounded-[16px] p-[48px] flex flex-col shadow-[inset_0_2px_0_rgba(255,255,255,0.5)]">
-          <h2 className="text-[28px] font-manrope font-extrabold mb-[30px] tracking-tight text-white">
+          <div className="w-[640px] min-h-[754px] bg-white/[0.1] rounded-[16px] p-[48px] flex flex-col shadow-[inset_0_2px_0_rgba(255,255,255,0.5)] relative isolate">
+            {/* Form Card Glass Layer (moved to sibling to prevent nested backdrop-filter bug) */}
+            <div className="absolute inset-0 rounded-[16px] backdrop-blur-[80px] -z-10"></div>
+
+            <h2 className="text-[28px] font-manrope font-extrabold mb-[30px] tracking-tight text-white">
             Tell us about your content
           </h2>
           <p className="text-[20px] font-satoshi font-medium leading-[26px] tracking-tighter text-white/90 mb-[40px] max-w-[700px]">
@@ -99,20 +135,94 @@ export default function Home() {
               placeholder="Creator name"
               className="w-full h-[55px] border border-white/10 bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[16px] transition-colors focus:bg-white/[0.12]"
             />
-            <div className="relative mb-[16px]">
-              <select defaultValue="" className="w-full h-[55px] border border-white/10 bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[16px] font-satoshi text-white/60 outline-none appearance-none cursor-pointer transition-colors focus:bg-white/[0.12]">
-                <option value="" disabled>Select niche</option>
-                <option value="tech" className="text-black">Technology</option>
-                <option value="gaming" className="text-black">Gaming</option>
-                <option value="education" className="text-black">Education</option>
-                <option value="entertainment" className="text-black">Entertainment</option>
-              </select>
+            <div className="relative mb-[16px]" ref={nicheDropdownRef}>
+              {/* Dropdown Toggle */}
+              <div 
+                onClick={() => {
+                  setIsDropdownOpen(!isDropdownOpen);
+                  if (!isDropdownOpen) setIsCountryDropdownOpen(false);
+                }}
+                className="w-full h-[55px] border border-white/10 bg-white/[0.1] rounded-[8px] px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12]"
+              >
+                <span className={`text-[16px] font-satoshi ${selectedNiche ? "text-white" : "text-white/60"}`}>
+                  {selectedNiche || "Select niche"}
+                </span>
+                <svg className={`w-6 h-6 text-white/60 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+
+              {/* Dropdown Menu */}
+              {isDropdownOpen && (
+                <div className="absolute top-[65px] left-0 w-full z-50 rounded-[8px] ">
+                  {/* Separate backdrop layer to prevent overflow clipping bugs in browsers */}
+                  <div 
+                    className="absolute inset-0 bg-[#1231FF]/10 border border-white/10 rounded-[8px] -z-10 backdrop-blur-[50px]"
+                    style={{ backdropFilter: 'blur(50px)', WebkitBackdropFilter: 'blur(50px)' }}
+                  ></div>
+                  
+                  {/* Content layer */}
+                  <div className="pr-[7px]">
+                    <div className="max-h-[500px] overflow-y-auto custom-scrollbar py-[8px]">
+                      {niches.map((niche) => (
+                        <div
+                          key={niche}
+                          onClick={() => {
+                            setSelectedNiche(niche);
+                            setIsDropdownOpen(false);
+                          }}
+                          className="w-[510px] h-[35px] ml-[15px] rounded-[6px] hover:bg-[#000000]/10 flex items-center px-[15px] cursor-pointer transition-colors"
+                        >
+                          <span className="text-[15px] font-satoshi font-medium text-white">{niche}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <input
-              type="text"
-              placeholder="Country"
-              className="w-full h-[55px] border border-white/10 bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[16px] transition-colors focus:bg-white/[0.12]"
-            />
+            <div className="relative mb-[16px]" ref={countryDropdownRef}>
+              {/* Country Dropdown Toggle */}
+              <div 
+                onClick={() => {
+                  setIsCountryDropdownOpen(!isCountryDropdownOpen);
+                  if (!isCountryDropdownOpen) setIsDropdownOpen(false);
+                }}
+                className="w-full h-[55px] border border-white/10 bg-white/[0.1] rounded-[8px] px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12]"
+              >
+                <span className={`text-[16px] font-satoshi ${selectedCountry ? "text-white" : "text-white/60"}`}>
+                  {selectedCountry || "Country"}
+                </span>
+                <svg className={`w-6 h-6 text-white/60 transition-transform ${isCountryDropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+
+              {/* Country Dropdown Menu */}
+              {isCountryDropdownOpen && (
+                <div className="absolute top-[65px] left-0 w-full z-50 rounded-[8px] ">
+                  {/* Separate backdrop layer to prevent overflow clipping bugs in browsers */}
+                  <div 
+                    className="absolute inset-0 bg-[#1231FF]/10 border border-white/10 rounded-[8px] -z-10 backdrop-blur-[50px]"
+                    style={{ backdropFilter: 'blur(50px)', WebkitBackdropFilter: 'blur(50px)' }}
+                  ></div>
+                  
+                  {/* Content layer */}
+                  <div className="pr-[7px]">
+                    <div className="max-h-[500px] overflow-y-auto custom-scrollbar py-[8px]">
+                      {countries.map((country) => (
+                        <div
+                          key={country}
+                          onClick={() => {
+                            setSelectedCountry(country);
+                            setIsCountryDropdownOpen(false);
+                          }}
+                          className="w-[510px] h-[35px] ml-[15px] rounded-[6px] hover:bg-[#000000]/10 flex items-center px-[15px] cursor-pointer transition-colors"
+                        >
+                          <span className="text-[15px] font-satoshi font-medium text-white">{country}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             <textarea
               placeholder="Briefly describe your channel, content goals, and current challenges and what you want to achieve"
               className="w-full h-[120px] border border-white/10 bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[18px] tracking-tight font-satoshi text-white placeholder:text-white/60 outline-none resize-none mb-[25px] transition-colors focus:bg-white/[0.12]"
