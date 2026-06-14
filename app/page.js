@@ -2,14 +2,23 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { getNames } from "country-list";
+import { useRouter } from "next/navigation";
 export default function Home() {
+  const router = useRouter();
   const logoRef = useRef(null);
+  const carouselRef = useRef(null);
   const nicheDropdownRef = useRef(null);
   const countryDropdownRef = useRef(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedNiche, setSelectedNiche] = useState("");
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("");
+  
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [desc, setDesc] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
 
   const countries = getNames().sort();
   const niches = [
@@ -43,10 +52,10 @@ export default function Home() {
       if (!logoRef.current) return;
       const scrollY = window.scrollY;
       const vh = window.innerHeight;
-      
-      // Stay solid for most of the 1st page, then fade out just before the 2nd page
-      const start = 0.6 * vh;
-      const end = 1.0 * vh;
+    
+      // Stay solid during the text animation, then fade out as the user scrolls past Thumbnail
+      const start = 2.0 * vh;
+      const end = 3.0 * vh;
       
       let opacity = 1;
       if (scrollY > start && scrollY < end) {
@@ -57,15 +66,102 @@ export default function Home() {
 
       logoRef.current.style.opacity = opacity;
       logoRef.current.style.pointerEvents = opacity === 0 ? "none" : "auto";
+
+      // --- Discrete Carousel Animation Logic ---
+      if (!carouselRef.current) return;
+      
+      const animStart = 0;
+      const animEnd = 2.0 * vh;
+      
+      let progress = 0;
+      if (scrollY >= animStart && scrollY <= animEnd) {
+        progress = (scrollY - animStart) / (animEnd - animStart);
+      } else if (scrollY > animEnd) {
+        progress = 1;
+      }
+      
+      const totalItems = 4;
+      // Calculate discrete active index based on thresholds
+      // progress: 0 to <0.25 = 0, 0.25 to <0.5 = 1, 0.5 to <0.75 = 2, 0.75 to 1 = 3
+      let activeIndex = Math.floor(progress * totalItems);
+      if (activeIndex >= totalItems) activeIndex = totalItems - 1; // clamp
+      
+      const itemHeight = 60;
+      const currentTranslateY = -(activeIndex * itemHeight);
+      
+      // Check if activeIndex changed to trigger a blur animation class
+      const currentIndexStr = carouselRef.current.getAttribute('data-active-index');
+      if (currentIndexStr !== activeIndex.toString()) {
+        carouselRef.current.setAttribute('data-active-index', activeIndex);
+        
+        // Add an animation class to all items for a quick blur flash
+        const items = carouselRef.current.querySelectorAll('.carousel-item');
+        items.forEach((item, idx) => {
+          // Clear styles from old continuous logic
+          item.style.transform = '';
+          item.style.filter = '';
+          item.style.opacity = '1';
+
+          // Trigger reflow to restart animation only if it's the newly active item
+          if (idx === activeIndex) {
+            item.classList.remove('blur-flash-anim');
+            void item.offsetWidth;
+            item.classList.add('blur-flash-anim');
+          } else {
+             item.classList.remove('blur-flash-anim');
+          }
+        });
+      }
+      
+      carouselRef.current.style.transform = `translateY(${currentTranslateY}px)`;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll(); // Initial check
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          niche: selectedNiche,
+          country: selectedCountry,
+          desc
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubmitStatus({ type: 'success', message: 'Message sent successfully!' });
+        setName("");
+        setEmail("");
+        setSelectedNiche("");
+        setSelectedCountry("");
+        setDesc("");
+        router.push("/success");
+      } else {
+        setSubmitStatus({ type: 'error', message: data.message || 'Failed to send message.' });
+      }
+    } catch (error) {
+      setSubmitStatus({ type: 'error', message: 'An unexpected error occurred.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const isFormComplete = name.trim() !== "" && email.trim() !== "" && selectedNiche !== "" && selectedCountry !== "" && desc.trim() !== "";
+
   return (
-    <div className="flex flex-col min-h-screen relative w-full overflow-x-hidden">
+    <div className="flex flex-col min-h-screen relative w-full overflow-x-clip">
       {/* Background Bleed Fix for Backdrop Blur */}
       <div className="fixed -inset-[200px] bg-[#1231FF] -z-50"></div>
       
@@ -84,38 +180,56 @@ export default function Home() {
         />
       </div>
 
-      {/* Main Content */}
-      <main className="flex flex-col absolute top-1/8 left-1/2 -translate-x-1/2 items-center justify-center text-center px-4 w-full max-w-4xl">
-        <h1 className="text-[80px] font-manrope font-extrabold leading-[90px] tracking-tighter mb-8">
-          One Team For<br />Every Creative Need.
-        </h1>
+      {/* 300vh Scroll Container */}
+      <div className="relative w-full h-[300vh]">
+        
+        {/* Sticky Viewport */}
+        <div className="sticky top-0 w-full h-screen overflow-hidden pointer-events-none">
+          
+          {/* Main Content */}
+          <main className="flex flex-col absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 items-center justify-center text-center px-4 w-full max-w-4xl pointer-events-auto">
+            <h1 className="text-[80px] font-manrope font-extrabold leading-[90px] tracking-tighter mb-8">
+              One Team For<br />Every Creative Need.
+            </h1>
 
         <p className="text-[40px] leading-[50px] tracking-tighter mb-6 font-medium">
           We&apos;re helping Content Creators.
         </p>
 
         <div className="flex items-center gap-3">
-          <span className="px-[15.55px] py-[6.44px] bg-white/10 rounded font-satoshi font-medium uppercase text-[15px] font-bold tracking-wide text-white/90">
+          <span className="px-[15.55px] py-[6.44px] bg-white/10 rounded font-satoshi font-medium uppercase text-[15px] font-bold tracking-wide text-white/90 -translate-y-[2px]">
             By Providing
           </span>
-          <span className="text-[40px] font-satoshi font-medium tracking-tighter">
-            Motion Graphics.
-          </span>
+          
+          {/* 3D Scrolling Text Wrapper */}
+          <div className="relative h-[60px] overflow-hidden flex items-center justify-start text-left min-w-[360px] translate-y-[2px]">
+            <div ref={carouselRef} className="absolute top-0 left-0 flex flex-col w-full transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ transformStyle: "preserve-3d", willChange: "transform" }}>
+              {["Motion Graphics.", "Video Editing.", "Short-form Content.", "Thumbnail."].map((text, idx) => (
+                <span 
+                  key={idx} 
+                  className="text-[40px] h-[60px] flex items-center font-satoshi font-medium tracking-tighter carousel-item origin-left"
+                  style={{ willChange: "transform, opacity, filter" }}
+                >
+                  {text}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </main>
-
-      {/* 200vh spacer: first 100vh holds the hero view, second 100vh is completely blank */}
-      <div className="h-[100vh] w-full shrink-0 pointer-events-none"></div>
+        </div>
+      </div>
 
       {/* Form Section */}
       <section className="w-full min-h-screen flex items-center justify-center px-4 relative z-10">
         <div className="relative">
-          {/* Bottom Right Glow Effect */}
-          <div className="absolute bottom-[20px] right-[20px] w-[155px] h-[155px] bg-white/80 rounded-full -z-10 blur-[60px]"></div>
+          {/* Background Effects Wrapper (Masks glow to card boundaries) */}
+          <div className="absolute inset-0 rounded-[16px] overflow-hidden -z-10">
+            <div className="absolute bottom-[20px] right-[20px] w-[155px] h-[155px] bg-white/80 rounded-full blur-[60px]"></div>
+            <div className="absolute inset-0 backdrop-blur-[80px]"></div>
+          </div>
 
           <div className="w-[640px] min-h-[754px] bg-white/[0.1] rounded-[16px] p-[48px] flex flex-col shadow-[inset_0_2px_0_rgba(255,255,255,0.5)] relative isolate">
-            {/* Form Card Glass Layer (moved to sibling to prevent nested backdrop-filter bug) */}
-            <div className="absolute inset-0 rounded-[16px] backdrop-blur-[80px] -z-10"></div>
 
             <h2 className="text-[28px] font-manrope font-extrabold mb-[30px] tracking-tight text-white">
             Tell us about your content
@@ -124,16 +238,22 @@ export default function Home() {
             We&apos;ll understand your vision, handle the production, and help you publish better content at scale.
           </p>
 
-          <form className="flex flex-col flex-1">
+          <form className="flex flex-col flex-1" onSubmit={handleSubmit}>
             <input
               type="email"
               placeholder="Email address"
-              className="w-full h-[55px] border border-white/10 bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[16px] transition-colors focus:bg-white/[0.12]"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full h-[55px] border border-white/10 focus:border-white bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[16px] transition-colors focus:bg-white/[0.12]"
             />
             <input
               type="text"
               placeholder="Creator name"
-              className="w-full h-[55px] border border-white/10 bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[16px] transition-colors focus:bg-white/[0.12]"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full h-[55px] border border-white/10 focus:border-white bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[16px] transition-colors focus:bg-white/[0.12]"
             />
             <div className="relative mb-[16px]" ref={nicheDropdownRef}>
               {/* Dropdown Toggle */}
@@ -142,7 +262,7 @@ export default function Home() {
                   setIsDropdownOpen(!isDropdownOpen);
                   if (!isDropdownOpen) setIsCountryDropdownOpen(false);
                 }}
-                className="w-full h-[55px] border border-white/10 bg-white/[0.1] rounded-[8px] px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12]"
+                className={`w-full h-[55px] border ${isDropdownOpen ? "border-white" : "border-white/10"} bg-white/[0.1] rounded-[8px] px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12]`}
               >
                 <span className={`text-[16px] font-satoshi ${selectedNiche ? "text-white" : "text-white/60"}`}>
                   {selectedNiche || "Select niche"}
@@ -186,7 +306,7 @@ export default function Home() {
                   setIsCountryDropdownOpen(!isCountryDropdownOpen);
                   if (!isCountryDropdownOpen) setIsDropdownOpen(false);
                 }}
-                className="w-full h-[55px] border border-white/10 bg-white/[0.1] rounded-[8px] px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12]"
+                className={`w-full h-[55px] border ${isCountryDropdownOpen ? "border-white" : "border-white/10"} bg-white/[0.1] rounded-[8px] px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12]`}
               >
                 <span className={`text-[16px] font-satoshi ${selectedCountry ? "text-white" : "text-white/60"}`}>
                   {selectedCountry || "Country"}
@@ -225,15 +345,30 @@ export default function Home() {
             </div>
             <textarea
               placeholder="Briefly describe your channel, content goals, and current challenges and what you want to achieve"
-              className="w-full h-[120px] border border-white/10 bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[18px] tracking-tight font-satoshi text-white placeholder:text-white/60 outline-none resize-none mb-[25px] transition-colors focus:bg-white/[0.12]"
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              required
+              className="w-full h-[120px] border border-white/10 focus:border-white bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[18px] tracking-tight font-satoshi text-white placeholder:text-white/60 outline-none resize-none mb-[25px] transition-colors focus:bg-white/[0.12]"
             ></textarea>
 
-            <button
-              type="submit"
-              className="bg-white text-[#1231FF] font-satoshi font-bold text-[18px] rounded-[8px] px-[auto] h-[55px] w-[120px] hover:bg-white/90 transition-colors mt-auto"
-            >
-              Submit
-            </button>
+            <div className="flex items-center gap-4 mt-auto">
+              <button
+                type="submit"
+                disabled={isSubmitting || !isFormComplete}
+                className={`font-satoshi font-bold text-[18px] rounded-[8px] px-[auto] h-[55px] w-[120px] transition-colors ${
+                  isFormComplete && !isSubmitting
+                    ? "bg-white text-[#1231FF] hover:bg-white/90 cursor-pointer"
+                    : "bg-white/30 text-white/80 cursor-not-allowed"
+                }`}
+              >
+                {isSubmitting ? "Sending..." : "Submit"}
+              </button>
+              {submitStatus && (
+                <span className={`font-satoshi font-medium text-[16px] ${submitStatus.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                  {submitStatus.message}
+                </span>
+              )}
+            </div>
           </form>
         </div>
         </div>
