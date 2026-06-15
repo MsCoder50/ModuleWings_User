@@ -402,7 +402,7 @@ export default function Home() {
 
           {/* Middle Row: Links & Copyright */}
           <div className="flex justify-between items-start my-[20px]">
-            <div className="flex items-center tracking-tighter gap-6">
+            <div className="flex items-center tracking-normal gap-6">
               <a href="#" className="text-[14px] font-satoshi font-bold text-white/50 hover:text-white transition-colors">
                 Privacy Policy
               </a>
@@ -410,7 +410,7 @@ export default function Home() {
                 Terms of Service
               </a>
             </div>
-            <span className="text-[14px] font-satoshi tracking-tighter font-bold text-white/50">
+            <span className="text-[14px] font-satoshi tracking-normal font-bold text-white/50">
               © 2026 Module wings. All rights reserved.
             </span>
           </div>
@@ -419,7 +419,7 @@ export default function Home() {
           <div className="my-[30px]">
             <p className="text-[14px] font-satoshi leading-[24px]">
               <span className="font-bold text-white">Module Wings. </span>
-              <span className="font-medium leading-[10px] tracking-tighter text-[#8898ff]">The hidden cost of managing editors, designers, and developers separately instead of creating content measured in delayed uploads,<br></br> inconsistent quality, missed opportunities, and hours lost to coordination.</span>
+              <span className="font-medium leading-[10px] tracking-normal text-[#8898ff]">The hidden cost of managing editors, designers, and developers separately instead of creating content measured in delayed uploads,<br></br> inconsistent quality, missed opportunities, and hours lost to coordination.</span>
             </p>
           </div>
 
