@@ -113,13 +113,13 @@ export function generateEmailHtml(name) {
                     </td>
                     <td align="right" style="padding-bottom: 30px;">
                       <a href="https://www.instagram.com/modulewings/" style="text-decoration: none; margin-left: 24px;">
-                        <img src="https://modulewings.com/images/mail_ig.png" alt="Instagram" width="60" style="display: inline-block; border: 0;" />
+                        <img src="https://modulewings.com/images/mail_ig.png" alt="Instagram" width="36" style="display: inline-block; border: 0;" />
                       </a>
                       <a href="https://x.com/ModuleWings" style="text-decoration: none; margin-left: 24px;">
-                        <img src="https://modulewings.com/images/mail_x.png" alt="X" width="60" style="display: inline-block; border: 0;" />
+                        <img src="https://modulewings.com/images/mail_x.png" alt="X" width="30" style="display: inline-block; border: 0;" />
                       </a>
                       <a href="https://www.linkedin.com/in/modulewings/" style="text-decoration: none; margin-left: 24px;">
-                        <img src="https://modulewings.com/images/mail_in.png" alt="LinkedIn" width="60" style="display: inline-block; border: 0;" />
+                        <img src="https://modulewings.com/images/mail_in.png" alt="LinkedIn" width="36" style="display: inline-block; border: 0;" />
                       </a>
                     </td>
                   </tr>
