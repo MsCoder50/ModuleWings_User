@@ -12,7 +12,8 @@
   --font-manrope: var(--font-manrope);
 }
 
-html, body {
+html,
+body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
@@ -23,18 +24,22 @@ html, body {
   scrollbar-width: thin;
   scrollbar-color: #ffffff transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
   margin-top: 17px;
   margin-bottom: 17px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #ffffff;
   border-radius: 9999px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-button {
   display: none;
   width: 0;
@@ -42,8 +47,17 @@ html, body {
 }
 
 @keyframes blurFlash {
-  0% { filter: blur(10px); transform: perspective(500px) rotateX(60deg) translateY(20px); opacity: 0; }
-  100% { filter: blur(0px); transform: perspective(500px) rotateX(0deg) translateY(0px); opacity: 1; }
+  0% {
+    filter: blur(20px);
+    transform: perspective(500px) rotateX(60deg) translateY(20px);
+    opacity: 0;
+  }
+
+  100% {
+    filter: blur(0px);
+    transform: perspective(500px) rotateX(0deg) translateY(0px);
+    opacity: 1;
+  }
 }
 
 .blur-flash-anim {

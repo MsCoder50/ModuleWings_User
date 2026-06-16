@@ -54,9 +54,9 @@ export default function Home() {
       const scrollY = window.scrollY;
       const vh = window.innerHeight;
 
-      // Stay solid during the text animation, then fade out as the user scrolls past Thumbnail
-      const start = 2.6 * vh;
-      const end = 3.0 * vh;
+      // Stay solid during the text animation, then fade out as the user scrolls past the container
+      const start = 1.2 * vh;
+      const end = 1.5* vh;
 
       let opacity = 1;
       if (scrollY > start && scrollY < end) {
@@ -71,8 +71,9 @@ export default function Home() {
       // --- Discrete Carousel Animation Logic ---
       if (!carouselRef.current) return;
 
+      // We want roughly 1 scroll tick (~25px on some devices) per text change. Total 4 items = ~100px total scroll distance.
       const animStart = 0;
-      const animEnd = 2.0 * vh;
+      const animEnd = 100;
 
       let progress = 0;
       if (scrollY >= animStart && scrollY <= animEnd) {
@@ -112,6 +113,14 @@ export default function Home() {
             item.classList.remove('blur-flash-anim');
           }
         });
+
+        // Auto-align vertical scroll width based on active text length
+        const activeItem = items[activeIndex];
+        if (activeItem) {
+          const newWidth = activeItem.offsetWidth;
+          // Add a tiny buffer to prevent anti-aliasing cutoff
+          carouselRef.current.parentElement.style.width = `${newWidth + 2}px`;
+        }
       }
 
       carouselRef.current.style.transform = `translateY(${currentTranslateY}px)`;
@@ -184,7 +193,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen relative w-full overflow-x-clip">
-      
+
       {/* Error Toast Notification */}
       {submitStatus && submitStatus.type === 'error' && (
         <div className="fixed top-[40px] left-1/2 -translate-x-1/2 z-[100] bg-red-500/90 backdrop-blur-md text-white font-satoshi font-medium px-6 py-3 rounded-[8px] shadow-[0_4px_12px_rgba(0,0,0,0.2)] animate-in fade-in slide-in-from-top-5 duration-300">
@@ -210,8 +219,8 @@ export default function Home() {
         />
       </div>
 
-      {/* 300vh Scroll Container */}
-      <div className="relative w-full h-[300vh]">
+      {/* 150vh Scroll Container */}
+      <div className="relative w-full h-[150vh]">
 
         {/* Sticky Viewport */}
         <div className="sticky top-0 w-full h-screen overflow-hidden pointer-events-none">
@@ -226,25 +235,27 @@ export default function Home() {
               We&apos;re helping Content Creators.
             </p>
 
-            <div className="flex items-center justify-center gap-4 w-full mt-2">
-              <div className="flex-1 flex justify-end items-center h-[60px]">
-                <span className="px-[15.55px] py-[6.44px] bg-white/10 rounded font-satoshi font-medium uppercase text-[15px] font-bold tracking-wide text-white/90">
-                  By Providing
-                </span>
-              </div>
+            <div className="w-full flex items-center justify-center">
+              <div className="flex items-center justify-center gap-4 mt-2 transition-all duration-700">
+                <div className="flex justify-end items-center h-[60px]">
+                  <span className="px-[15.55px] py-[6.44px] bg-white/10 rounded font-satoshi font-medium uppercase text-[15px] font-bold tracking-wide text-white/90 whitespace-nowrap">
+                    By Providing
+                  </span>
+                </div>
 
-              {/* 3D Scrolling Text Wrapper */}
-              <div className="flex-1 flex justify-start relative h-[60px] overflow-hidden text-left">
-                <div ref={carouselRef} className="absolute top-0 left-0 flex flex-col w-[400px] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ transformStyle: "preserve-3d", willChange: "transform" }}>
-                  {["Motion Graphics.", "Video Editing.", "Short-form Content.", "Thumbnail."].map((text, idx) => (
-                    <span
-                      key={idx}
-                      className="text-[40px] leading-[60px] h-[60px] flex items-center justify-start font-satoshi font-medium tracking-tighter carousel-item origin-left"
-                      style={{ willChange: "transform, opacity, filter" }}
-                    >
-                      {text}
-                    </span>
-                  ))}
+                {/* 3D Scrolling Text Wrapper */}
+                <div className="relative h-[60px] overflow-hidden text-left transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ width: '315px' }}>
+                  <div ref={carouselRef} className="absolute top-0 left-0 flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ transformStyle: "preserve-3d", willChange: "transform" }}>
+                    {["Motion Graphics.", "Video Editing.", "Short-form Content.", "Thumbnail."].map((text, idx) => (
+                      <span
+                        key={idx}
+                        className="text-[40px] leading-[60px] h-[60px] inline-flex items-center justify-start font-satoshi font-medium tracking-tighter carousel-item origin-left whitespace-nowrap w-max"
+                        style={{ willChange: "transform, opacity, filter" }}
+                      >
+                        {text}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -266,7 +277,7 @@ export default function Home() {
             <h2 className="text-[28px] font-manrope font-extrabold mb-[30px] tracking-tight text-white">
               Tell us about your content
             </h2>
-            <p className="text-[20px] font-satoshi font-medium leading-[26px] tracking-tighter text-white/90 mb-[40px] max-w-[700px]">
+            <p className="text-[20px] font-satoshi font-medium leading-[26px] tracking-normal text-white/90 mb-[40px] max-w-[700px]">
               We&apos;ll understand your vision, handle the production, and help you publish better content at scale.
             </p>
 
@@ -388,8 +399,8 @@ export default function Home() {
                   type="submit"
                   disabled={isSubmitting || !isFormComplete}
                   className={`font-satoshi font-bold text-[18px] rounded-[8px] px-[auto] h-[55px] w-[120px] transition-colors ${isFormComplete && !isSubmitting
-                      ? "bg-white text-[#1231FF] hover:bg-white/90 cursor-pointer"
-                      : "bg-white/30 text-[#1231FF] cursor-not-allowed"
+                    ? "bg-white text-[#1231FF] hover:bg-white/90 cursor-pointer"
+                    : "bg-white/30 text-[#1231FF] cursor-not-allowed"
                     }`}
                 >
                   {isSubmitting ? `Sending${sendingDots}` : "Submit"}
