@@ -55,8 +55,9 @@ export default function Home() {
       const vh = window.innerHeight;
 
       // Stay solid during the text animation, then fade out as the user scrolls past the container
-      const start = 1.2 * vh;
-      const end = 1.5* vh;
+      const isMobile = window.innerWidth < 768;
+      const start = isMobile ? 1.0 * vh : 1.2 * vh;
+      const end = isMobile ? 1.3 * vh : 1.5 * vh;
 
       let opacity = 1;
       if (scrollY > start && scrollY < end) {
@@ -88,7 +89,7 @@ export default function Home() {
       let activeIndex = Math.floor(progress * totalItems);
       if (activeIndex >= totalItems) activeIndex = totalItems - 1; // clamp
 
-      const itemHeight = 60;
+      const itemHeight = isMobile ? 40 : 60;
       const currentTranslateY = -(activeIndex * itemHeight);
 
       // Check if activeIndex changed to trigger a blur animation class
@@ -207,14 +208,14 @@ export default function Home() {
       {/* Top Logo */}
       <div
         ref={logoRef}
-        className="fixed top-[45px] left-[50%] -translate-x-1/2 flex items-center justify-center w-[274px] rounded-[10px] h-[62px] z-50 backdrop-blur-[20px]"
+        className="fixed top-[20px] md:top-[45px] left-[50%] -translate-x-1/2 flex items-center justify-center w-[170px] md:w-[274px] rounded-[5px] h-[45px] md:h-[62px] z-50 backdrop-blur-[20px]"
       >
         <Image
           src="/images/11.svg"
           alt="Module Wings Logo"
-          width={191}
-          height={31}
-          className="brightness-0 invert object-contain"
+          width={140}
+          height={23}
+          className="brightness-0 invert object-contain w-[120px] md:w-[191px] h-auto"
           priority
         />
       </div>
@@ -227,29 +228,29 @@ export default function Home() {
 
           {/* Main Content */}
           <main className="flex flex-col absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 items-center justify-center text-center px-4 w-full max-w-4xl pointer-events-auto">
-            <h1 className="text-[80px] font-manrope font-extrabold leading-[90px] tracking-tighter mb-8">
+            <h1 className="text-[35px] md:text-[80px] font-manrope font-extrabold leading-[40px] md:leading-[90px] tracking-tighter mb-4 md:mb-8">
               One Team For<br />Every Creative Need.
             </h1>
 
-            <p className="text-[40px] leading-[50px] tracking-tighter mb-6 font-medium">
+            <p className="text-[20px] md:text-[40px] leading-[28px] md:leading-[50px] tracking-tighter mb-[5px] md:mb-6 font-medium">
               We&apos;re helping Content Creators.
             </p>
 
             <div className="w-full flex items-center justify-center">
-              <div className="flex items-center justify-center gap-4 mt-2 transition-all duration-700">
-                <div className="flex justify-end items-center h-[60px]">
-                  <span className="px-[15.55px] py-[6.44px] bg-white/10 rounded font-satoshi font-medium uppercase text-[15px] font-bold tracking-wide text-white/90 whitespace-nowrap">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-0 md:gap-4 mt-2 transition-all duration-700">
+                <div className="flex justify-center md:justify-end items-center h-[30px] md:h-[60px]">
+                  <span className="px-[12px] md:px-[15.55px] py-[4px] md:py-[6.44px] bg-white/10 rounded font-satoshi font-medium uppercase text-[12px] md:text-[15px] font-bold tracking-wide text-white/90 whitespace-nowrap">
                     By Providing
                   </span>
                 </div>
 
                 {/* 3D Scrolling Text Wrapper */}
-                <div className="relative h-[60px] overflow-hidden text-left transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ width: '315px' }}>
+                <div className="relative h-[40px] md:h-[60px] overflow-hidden text-left transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ width: '320px' }}>
                   <div ref={carouselRef} className="absolute top-0 left-0 flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ transformStyle: "preserve-3d", willChange: "transform" }}>
                     {["Motion Graphics.", "Video Editing.", "Short-form Content.", "Thumbnail."].map((text, idx) => (
                       <span
                         key={idx}
-                        className="text-[40px] leading-[60px] h-[60px] inline-flex items-center justify-start font-satoshi font-medium tracking-tighter carousel-item origin-left whitespace-nowrap w-max"
+                        className="text-[26px] md:text-[40px] leading-[40px] md:leading-[60px] h-[40px] md:h-[60px] inline-flex items-center justify-start font-satoshi font-medium tracking-tighter carousel-item origin-left whitespace-nowrap w-max"
                         style={{ willChange: "transform, opacity, filter" }}
                       >
                         {text}
@@ -258,6 +259,13 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Scroll Indicator Chevron */}
+            <div className="absolute top-[120%] left-1/2 -translate-x-1/2 flex justify-center animate-bounce mt-10 md:mt-20 opacity-60">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 9L12 15L18 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
           </main>
         </div>
@@ -272,12 +280,12 @@ export default function Home() {
           </div>
 
           {/* 2. Form Card (NO backdrop-blur! This makes the dark vignette physically impossible) */}
-          <div className="w-[640px] min-h-[754px] bg-white/[0.1] rounded-[16px] p-[48px] flex flex-col shadow-[inset_0_2px_0_rgba(255,255,255,0.5)] relative isolate">
+          <div className="w-full max-w-[640px] min-h-[500px] md:min-h-[754px] bg-white/[0.1] rounded-[16px] p-6 md:p-[48px] flex flex-col shadow-[inset_0_2px_0_rgba(255,255,255,0.5)] relative isolate">
 
-            <h2 className="text-[28px] font-manrope font-extrabold mb-[30px] tracking-tight text-white">
+            <h2 className="text-[24px] md:text-[28px] font-manrope font-extrabold mb-[20px] md:mb-[30px] tracking-tight text-white">
               Tell us about your content
             </h2>
-            <p className="text-[20px] font-satoshi font-medium leading-[26px] tracking-normal text-white/90 mb-[40px] max-w-[700px]">
+            <p className="text-[16px] md:text-[20px] font-satoshi font-medium leading-[22px] md:leading-[26px] tracking-normal text-white/90 mb-[30px] md:mb-[40px] max-w-[700px]">
               We&apos;ll understand your vision, handle the production, and help you publish better content at scale.
             </p>
 
@@ -288,7 +296,7 @@ export default function Home() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full h-[55px] border border-white/10 focus:border-white bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[16px] transition-colors focus:bg-white/[0.12]"
+                className="w-full h-[55px] border border-white/10 focus:border-white bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[16px] transition-colors focus:bg-white/[0.12]"
               />
               <input
                 type="text"
@@ -296,7 +304,7 @@ export default function Home() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full h-[55px] border border-white/10 focus:border-white bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[16px] transition-colors focus:bg-white/[0.12]"
+                className="w-full h-[55px] border border-white/10 focus:border-white bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[16px] transition-colors focus:bg-white/[0.12]"
               />
               <div className="relative mb-[16px]" ref={nicheDropdownRef}>
                 {/* Dropdown Toggle */}
@@ -305,7 +313,7 @@ export default function Home() {
                     setIsDropdownOpen(!isDropdownOpen);
                     if (!isDropdownOpen) setIsCountryDropdownOpen(false);
                   }}
-                  className={`w-full h-[55px] border ${isDropdownOpen ? "border-white" : "border-white/10"} bg-white/[0.1] rounded-[8px] px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12]`}
+                  className={`w-full h-[55px] border ${isDropdownOpen ? "border-white" : "border-white/10"} bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12]`}
                 >
                   <span className={`text-[16px] font-satoshi ${selectedNiche ? "text-white" : "text-white/60"}`}>
                     {selectedNiche || "Select niche"}
@@ -332,9 +340,9 @@ export default function Home() {
                               setSelectedNiche(niche);
                               setIsDropdownOpen(false);
                             }}
-                            className="w-[510px] h-[35px] ml-[15px] rounded-[6px] hover:bg-[#000000]/10 flex items-center px-[15px] cursor-pointer transition-colors"
+                            className="w-full h-[35px] rounded-[6px] hover:bg-[#000000]/10 flex items-center px-[15px] cursor-pointer transition-colors"
                           >
-                            <span className="text-[15px] font-satoshi font-medium text-white">{niche}</span>
+                            <span className="text-[14px] md:text-[15px] font-satoshi font-medium text-white truncate">{niche}</span>
                           </div>
                         ))}
                       </div>
@@ -349,7 +357,7 @@ export default function Home() {
                     setIsCountryDropdownOpen(!isCountryDropdownOpen);
                     if (!isCountryDropdownOpen) setIsDropdownOpen(false);
                   }}
-                  className={`w-full h-[55px] border ${isCountryDropdownOpen ? "border-white" : "border-white/10"} bg-white/[0.1] rounded-[8px] px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12]`}
+                  className={`w-full h-[55px] border ${isCountryDropdownOpen ? "border-white" : "border-white/10"} bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12]`}
                 >
                   <span className={`text-[16px] font-satoshi ${selectedCountry ? "text-white" : "text-white/60"}`}>
                     {selectedCountry || "Country"}
@@ -376,9 +384,9 @@ export default function Home() {
                               setSelectedCountry(country);
                               setIsCountryDropdownOpen(false);
                             }}
-                            className="w-[510px] h-[35px] ml-[15px] rounded-[6px] hover:bg-[#000000]/10 flex items-center px-[15px] cursor-pointer transition-colors"
+                            className="w-full h-[35px] rounded-[6px] hover:bg-[#000000]/10 flex items-center px-[15px] cursor-pointer transition-colors"
                           >
-                            <span className="text-[15px] font-satoshi font-medium text-white">{country}</span>
+                            <span className="text-[14px] md:text-[15px] font-satoshi font-medium text-white truncate">{country}</span>
                           </div>
                         ))}
                       </div>
@@ -387,18 +395,18 @@ export default function Home() {
                 )}
               </div>
               <textarea
-                placeholder="Briefly describe your channel, content goals, and current challenges and what you want to achieve"
+                placeholder="Tell us about your channel, challenges, and goals..."
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
                 required
-                className="w-full h-[120px] border border-white/10 focus:border-white bg-white/[0.1] rounded-[8px] px-[30px] py-[15px] text-[18px] tracking-tight font-satoshi text-white placeholder:text-white/60 outline-none resize-none mb-[25px] transition-colors focus:bg-white/[0.12]"
+                className="w-full h-[120px] border border-white/10 focus:border-white bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] py-[15px] text-[16px] md:text-[18px] tracking-tight font-satoshi text-white placeholder:text-white/60 outline-none resize-none mb-[25px] transition-colors focus:bg-white/[0.12]"
               ></textarea>
 
-              <div className="flex items-center gap-4 mt-auto">
+              <div className="flex items-center justify-center md:justify-start gap-4 mt-auto">
                 <button
                   type="submit"
                   disabled={isSubmitting || !isFormComplete}
-                  className={`font-satoshi font-bold text-[18px] rounded-[8px] px-[auto] h-[55px] w-[120px] transition-colors ${isFormComplete && !isSubmitting
+                  className={`font-satoshi font-bold text-[16px] md:text-[18px] rounded-[8px] px-6 h-[50px] md:h-[55px] w-full md:w-[120px] transition-colors ${isFormComplete && !isSubmitting
                     ? "bg-white text-[#1231FF] hover:bg-white/90 cursor-pointer"
                     : "bg-white/30 text-[#1231FF] cursor-not-allowed"
                     }`}
@@ -411,51 +419,51 @@ export default function Home() {
         </div>
       </section>
       {/* Footer Section */}
-      <footer className="w-full h-[64vh] relative flex justify-center mt-auto z-10">
-        <div className="absolute bottom-[70px] w-[981.22px] h-[173.09px] flex flex-col justify-center">
+      <footer className="w-full min-h-[64vh] relative flex justify-center mt-auto z-10 px-6 pt-20 md:pt-0 pb-10 md:pb-0">
+        <div className="relative md:absolute md:bottom-[70px] w-full max-w-[981px] flex flex-col justify-end md:justify-center">
 
           {/* Top Row: Logo & Social Icons */}
           <div className="flex justify-between items-center pb-[20px] border-b border-white/10">
             <Image
               src="/images/11.svg"
               alt="ModuleWings Logo"
-              width={169}
-              height={28}
-              className="object-contain"
+              width={120}
+              height={20}
+              className="object-contain w-[120px] md:w-[169px] h-auto"
             />
-            <div className="flex items-center gap-4">
-              <a href="#" className="opacity-90 hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-3 md:gap-4">
+              <a href="https://www.instagram.com/modulewings/" className="opacity-50 hover:opacity-100 transition-opacity">
                 <Image src="/icons/ig.svg" alt="Instagram" width={20} height={20} className="" />
               </a>
-              <a href="#" className="opacity-90 hover:opacity-100 transition-opacity">
+              <a href="https://x.com/ModuleWings" className="opacity-50 hover:opacity-100 transition-opacity">
                 <Image src="/icons/x.svg" alt="X (Twitter)" width={20} height={20} className="" />
               </a>
-              <a href="#" className="opacity-90 hover:opacity-100 transition-opacity">
+              <a href="https://www.linkedin.com/in/modulewings/" className="opacity-50 hover:opacity-100 transition-opacity">
                 <Image src="/icons/linkedIn.svg" alt="LinkedIn" width={20} height={20} className="" />
               </a>
             </div>
           </div>
 
           {/* Middle Row: Links & Copyright */}
-          <div className="flex justify-between items-start my-[20px]">
-            <div className="flex items-center tracking-normal gap-6">
-              <a href="#" className="text-[14px] font-satoshi font-bold text-white/50 hover:text-white transition-colors">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center my-[20px] gap-4 md:gap-0">
+            <div className="flex items-center tracking-normal gap-4 md:gap-6">
+              <a href="#" className="text-[12px] md:text-[14px] font-satoshi font-bold text-white/50 hover:text-white transition-colors">
                 Privacy Policy
               </a>
-              <a href="#" className="text-[14px] font-satoshi font-bold text-white/50 hover:text-white transition-colors">
+              <a href="#" className="text-[12px] md:text-[14px] font-satoshi font-bold text-white/50 hover:text-white transition-colors">
                 Terms of Service
               </a>
             </div>
-            <span className="text-[14px] font-satoshi tracking-normal font-bold text-white/50">
+            <span className="text-[12px] md:text-[14px] font-satoshi tracking-normal font-bold text-white/50">
               © 2026 Module wings. All rights reserved.
             </span>
           </div>
 
           {/* Bottom Row: Paragraph */}
-          <div className="my-[30px]">
-            <p className="text-[14px] font-satoshi leading-[24px]">
+          <div className="my-[20px] md:my-[30px]">
+            <p className="text-[12px] md:text-[14px] font-satoshi leading-[18px] md:leading-[24px]">
               <span className="font-bold text-white">Module Wings. </span>
-              <span className="font-medium leading-[10px] tracking-normal text-[#8898ff]">The hidden cost of managing editors, designers, and developers separately instead of creating content measured in delayed uploads,<br></br> inconsistent quality, missed opportunities, and hours lost to coordination.</span>
+              <span className="font-medium tracking-normal text-[#8898ff]">The hidden cost of managing editors, designers, and developers separately instead of creating content measured in delayed uploads, inconsistent quality, missed opportunities, and hours lost to coordination.</span>
             </p>
           </div>
 
