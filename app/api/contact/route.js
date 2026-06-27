@@ -1,5 +1,10 @@
 import transporter from "@/lib/smtp";
 import { NextResponse } from "next/server";
+import dns from "dns";
+import { promisify } from "util";
+import { ContactSchema } from "@/lib/schema";
+
+const resolveMx = promisify(dns.resolveMx);
 
 export function generateEmailHtml(name) {
   return `
@@ -153,7 +158,7 @@ export function generateEmailHtml(name) {
 }
 
 async function sendMailToUser(name, email) {
-  await transporter.sendMail({
+  return await transporter.sendMail({
     from: '"ModuleWings Team" <contact@modulewings.com>',
     to: email,
     subject: "We will shortly connect to you",
@@ -173,9 +178,33 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const { name, email, niche, country, desc } = await request.json();
+    const body = await request.json();
+    const parseResult = ContactSchema.safeParse(body);
+    
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { status: 400, message: "Validation failed", errors: parseResult.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+    
+    const { name, email, niche, country, desc } = parseResult.data;
 
-    await transporter.sendMail({
+    const domain = email.split("@")[1];
+    if (!domain) {
+      return NextResponse.json({ status: 400, message: "Invalid email format" }, { status: 400 });
+    }
+
+    try {
+      const mxRecords = await resolveMx(domain);
+      if (!mxRecords || mxRecords.length === 0) {
+        return NextResponse.json({ status: 400, message: "Email domain does not exist or cannot receive emails" }, { status: 400 });
+      }
+    } catch (dnsError) {
+      return NextResponse.json({ status: 400, message: "Email domain does not exist or cannot receive emails" }, { status: 400 });
+    }
+
+    const adminInfo = await transporter.sendMail({
       from: process.env.MAIL_USER,
       to: "contact@modulewings.com",
       subject: "New contact request",
@@ -189,7 +218,15 @@ export async function POST(request) {
             `
     });
 
-    await sendMailToUser(name, email);
+    if (!adminInfo || !adminInfo.messageId || (adminInfo.rejected && adminInfo.rejected.length > 0)) {
+      throw new Error("Admin email was rejected by the mail server.");
+    }
+
+    const userInfo = await sendMailToUser(name, email);
+
+    if (!userInfo || !userInfo.messageId || (userInfo.rejected && userInfo.rejected.length > 0)) {
+      throw new Error("User confirmation email was rejected by the mail server.");
+    }
 
     return NextResponse.json({ status: 200, message: "Message sent successfully" });
   } catch (error) {

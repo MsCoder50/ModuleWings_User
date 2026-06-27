@@ -3,6 +3,8 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { getNames } from "country-list";
 import { useRouter } from "next/navigation";
+import { ContactSchema } from "@/lib/schema";
+
 export default function Home() {
   const router = useRouter();
   const logoRef = useRef(null);
@@ -21,6 +23,10 @@ export default function Home() {
   const [submitStatus, setSubmitStatus] = useState(null);
   const [sendingDots, setSendingDots] = useState("");
 
+  const [nicheSearch, setNicheSearch] = useState("");
+  const [countrySearch, setCountrySearch] = useState("");
+  const [formErrors, setFormErrors] = useState({});
+
   const countries = getNames().sort();
   const niches = [
     "Gaming", "Tech Review", "Smartphone Review", "AI Content", "Finance Influencers",
@@ -32,6 +38,9 @@ export default function Home() {
     "Lifestyle Influencers", "Podcast Hosts", "Interview-Based Channels", "Documentary",
     "News & Current Affairs", "Personal Branding (CEOs, Founders, Consultants)"
   ].sort();
+
+  const filteredNiches = niches.filter(n => n.toLowerCase().includes(nicheSearch.toLowerCase()));
+  const filteredCountries = countries.filter(c => c.toLowerCase().includes(countrySearch.toLowerCase()));
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -152,8 +161,26 @@ export default function Home() {
     }
   }, [submitStatus]);
 
+  const isFormComplete = name && email && selectedNiche && selectedCountry && desc;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormErrors({});
+
+    const formData = {
+      name,
+      email,
+      niche: selectedNiche,
+      country: selectedCountry,
+      desc
+    };
+
+    const parseResult = ContactSchema.safeParse(formData);
+    if (!parseResult.success) {
+      setFormErrors(parseResult.error.flatten().fieldErrors);
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitStatus(null);
 
@@ -161,13 +188,7 @@ export default function Home() {
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          niche: selectedNiche,
-          country: selectedCountry,
-          desc
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
@@ -190,7 +211,6 @@ export default function Home() {
     }
   };
 
-  const isFormComplete = name.trim() !== "" && email.trim() !== "" && selectedNiche !== "" && selectedCountry !== "" && desc.trim() !== "";
 
   return (
     <div className="flex flex-col min-h-screen relative w-full overflow-x-clip">
@@ -294,32 +314,40 @@ export default function Home() {
                 type="email"
                 placeholder="Email address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full h-[55px] border border-white/10 focus:border-white bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[16px] transition-colors focus:bg-white/[0.12]"
+                onChange={(e) => { setEmail(e.target.value); setFormErrors(prev => ({...prev, email: undefined})); }}
+                className={`w-full h-[55px] border ${formErrors.email ? "border-[#FF0000]" : "border-white/10 focus:border-white"} bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[4px] transition-colors focus:bg-white/[0.12]`}
               />
+              {formErrors.email && <span className="text-[#FF0000] text-[13px] font-satoshi mb-[16px] px-1">{formErrors.email[0]}</span>}
+              {!formErrors.email && <div className="mb-[16px]"></div>}
+              
               <input
                 type="text"
                 placeholder="Creator name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="w-full h-[55px] border border-white/10 focus:border-white bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[16px] transition-colors focus:bg-white/[0.12]"
+                onChange={(e) => { setName(e.target.value); setFormErrors(prev => ({...prev, name: undefined})); }}
+                className={`w-full h-[55px] border ${formErrors.name ? "border-[#FF0000]" : "border-white/10 focus:border-white"} bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] py-[15px] text-[16px] font-satoshi text-white placeholder:text-white/60 outline-none mb-[4px] transition-colors focus:bg-white/[0.12]`}
               />
-              <div className="relative mb-[16px]" ref={nicheDropdownRef}>
+              {formErrors.name && <span className="text-[#FF0000] text-[13px] font-satoshi mb-[16px] px-1">{formErrors.name[0]}</span>}
+              {!formErrors.name && <div className="mb-[16px]"></div>}
+              <div className="relative" ref={nicheDropdownRef}>
                 {/* Dropdown Toggle */}
                 <div
                   onClick={() => {
                     setIsDropdownOpen(!isDropdownOpen);
-                    if (!isDropdownOpen) setIsCountryDropdownOpen(false);
+                    if (!isDropdownOpen) {
+                      setIsCountryDropdownOpen(false);
+                      setNicheSearch("");
+                    }
                   }}
-                  className={`w-full h-[55px] border ${isDropdownOpen ? "border-white" : "border-white/10"} bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12]`}
+                  className={`w-full h-[55px] border ${formErrors.niche ? "border-[#FF0000]" : (isDropdownOpen ? "border-white" : "border-white/10")} bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12] mb-[4px]`}
                 >
                   <span className={`text-[16px] font-satoshi ${selectedNiche ? "text-white" : "text-white/60"}`}>
                     {selectedNiche || "Select niche"}
                   </span>
                   <svg className={`w-6 h-6 text-white/60 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
+                {formErrors.niche && <span className="text-[#FF0000] text-[13px] font-satoshi block mb-[16px] px-1">{formErrors.niche[0]}</span>}
+                {!formErrors.niche && <div className="mb-[16px]"></div>}
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
@@ -331,39 +359,60 @@ export default function Home() {
                     ></div>
 
                     {/* Content layer */}
+                    <div className="p-[8px] border-b border-white/10">
+                      <input 
+                        type="text" 
+                        placeholder="Search niche..."
+                        value={nicheSearch}
+                        onChange={(e) => setNicheSearch(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                        className="w-full bg-white/10 border border-white/20 rounded-[6px] px-3 py-2 text-sm text-white placeholder-white/50 outline-none focus:border-white/50"
+                      />
+                    </div>
                     <div className="pr-[7px]">
-                      <div className="max-h-[500px] overflow-y-auto custom-scrollbar py-[8px]">
-                        {niches.map((niche) => (
+                      <div className="max-h-[300px] overflow-y-auto custom-scrollbar py-[8px]">
+                        {filteredNiches.length > 0 ? filteredNiches.map((niche) => (
                           <div
                             key={niche}
                             onClick={() => {
                               setSelectedNiche(niche);
                               setIsDropdownOpen(false);
+                              setFormErrors(prev => ({...prev, niche: undefined}));
                             }}
                             className="w-full h-[35px] rounded-[6px] hover:bg-[#000000]/10 flex items-center px-[15px] cursor-pointer transition-colors"
                           >
                             <span className="text-[14px] md:text-[15px] font-satoshi font-medium text-white truncate">{niche}</span>
                           </div>
-                        ))}
+                        )) : (
+                          <div className="w-full h-[35px] flex items-center px-[15px]">
+                            <span className="text-[14px] font-satoshi text-white/50">No results found</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 )}
               </div>
-              <div className="relative mb-[16px]" ref={countryDropdownRef}>
+              <div className="relative" ref={countryDropdownRef}>
                 {/* Country Dropdown Toggle */}
                 <div
                   onClick={() => {
                     setIsCountryDropdownOpen(!isCountryDropdownOpen);
-                    if (!isCountryDropdownOpen) setIsDropdownOpen(false);
+                    if (!isCountryDropdownOpen) {
+                      setIsDropdownOpen(false);
+                      setCountrySearch("");
+                    }
                   }}
-                  className={`w-full h-[55px] border ${isCountryDropdownOpen ? "border-white" : "border-white/10"} bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12]`}
+                  className={`w-full h-[55px] border ${formErrors.country ? "border-[#FF0000]" : (isCountryDropdownOpen ? "border-white" : "border-white/10")} bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] flex items-center justify-between cursor-pointer transition-colors hover:bg-white/[0.12] mb-[4px]`}
                 >
                   <span className={`text-[16px] font-satoshi ${selectedCountry ? "text-white" : "text-white/60"}`}>
                     {selectedCountry || "Country"}
                   </span>
                   <svg className={`w-6 h-6 text-white/60 transition-transform ${isCountryDropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
+                {formErrors.country && <span className="text-[#FF0000] text-[13px] font-satoshi block mb-[16px] px-1">{formErrors.country[0]}</span>}
+                {!formErrors.country && <div className="mb-[16px]"></div>}
 
                 {/* Country Dropdown Menu */}
                 {isCountryDropdownOpen && (
@@ -375,20 +424,36 @@ export default function Home() {
                     ></div>
 
                     {/* Content layer */}
+                    <div className="p-[8px] border-b border-white/10">
+                      <input 
+                        type="text" 
+                        placeholder="Search country..."
+                        value={countrySearch}
+                        onChange={(e) => setCountrySearch(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                        className="w-full bg-white/10 border border-white/20 rounded-[6px] px-3 py-2 text-sm text-white placeholder-white/50 outline-none focus:border-white/50"
+                      />
+                    </div>
                     <div className="pr-[7px]">
-                      <div className="max-h-[500px] overflow-y-auto custom-scrollbar py-[8px]">
-                        {countries.map((country) => (
+                      <div className="max-h-[300px] overflow-y-auto custom-scrollbar py-[8px]">
+                        {filteredCountries.length > 0 ? filteredCountries.map((country) => (
                           <div
                             key={country}
                             onClick={() => {
                               setSelectedCountry(country);
                               setIsCountryDropdownOpen(false);
+                              setFormErrors(prev => ({...prev, country: undefined}));
                             }}
                             className="w-full h-[35px] rounded-[6px] hover:bg-[#000000]/10 flex items-center px-[15px] cursor-pointer transition-colors"
                           >
                             <span className="text-[14px] md:text-[15px] font-satoshi font-medium text-white truncate">{country}</span>
                           </div>
-                        ))}
+                        )) : (
+                          <div className="w-full h-[35px] flex items-center px-[15px]">
+                            <span className="text-[14px] font-satoshi text-white/50">No results found</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -397,18 +462,19 @@ export default function Home() {
               <textarea
                 placeholder="Tell us about your channel, challenges, and goals..."
                 value={desc}
-                onChange={(e) => setDesc(e.target.value)}
-                required
-                className="w-full h-[120px] border border-white/10 focus:border-white bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] py-[15px] text-[16px] md:text-[18px] tracking-tight font-satoshi text-white placeholder:text-white/60 outline-none resize-none mb-[25px] transition-colors focus:bg-white/[0.12]"
+                onChange={(e) => { setDesc(e.target.value); setFormErrors(prev => ({...prev, desc: undefined})); }}
+                className={`w-full h-[120px] border ${formErrors.desc ? "border-[#FF0000]" : "border-white/10 focus:border-white"} bg-white/[0.1] rounded-[8px] px-4 md:px-[30px] py-[15px] text-[16px] md:text-[18px] tracking-tight font-satoshi text-white placeholder:text-white/60 outline-none resize-none mb-[4px] transition-colors focus:bg-white/[0.12]`}
               ></textarea>
+              {formErrors.desc && <span className="text-[#FF0000] text-[13px] font-satoshi mb-[25px] px-1">{formErrors.desc[0]}</span>}
+              {!formErrors.desc && <div className="mb-[25px]"></div>}
 
               <div className="flex items-center justify-center md:justify-start gap-4 mt-auto">
                 <button
                   type="submit"
                   disabled={isSubmitting || !isFormComplete}
-                  className={`font-satoshi font-bold text-[16px] md:text-[18px] rounded-[8px] px-6 h-[50px] md:h-[55px] w-full md:w-[120px] transition-colors ${isFormComplete && !isSubmitting
+                  className={`font-satoshi font-bold text-[16px] md:text-[18px] rounded-[8px] px-6 h-[50px] md:h-[55px] w-full md:w-[120px] transition-colors ${(isFormComplete && !isSubmitting)
                     ? "bg-white text-[#1231FF] hover:bg-white/90 cursor-pointer"
-                    : "bg-white/30 text-[#1231FF] cursor-not-allowed"
+                    : "bg-white/50 text-[#1231FF] cursor-not-allowed"
                     }`}
                 >
                   {isSubmitting ? `Sending${sendingDots}` : "Submit"}
