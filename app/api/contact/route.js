@@ -3,8 +3,17 @@ import { NextResponse } from "next/server";
 import dns from "dns";
 import { promisify } from "util";
 import { ContactSchema } from "@/lib/schema";
+import { Redis } from "@upstash/redis";
+import { Ratelimit } from "@upstash/ratelimit";
 
 const resolveMx = promisify(dns.resolveMx);
+
+// Initialize Upstash Rate Limiter
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(5, "1 m"), // 5 requests per minute
+  analytics: true,
+});
 
 export function generateEmailHtml(name) {
   return `
@@ -178,6 +187,25 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+    const clientIp = ip.split(",")[0].trim();
+    
+    // Check Rate Limiter
+    const { success, limit, remaining, reset } = await ratelimit.limit(`api_rate_limit:${clientIp}`);
+    if (!success) {
+      return NextResponse.json(
+        { status: 429, message: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": limit.toString(),
+            "X-RateLimit-Remaining": remaining.toString(),
+            "X-RateLimit-Reset": reset.toString(),
+          }
+        }
+      );
+    }
+
     const body = await request.json();
     const parseResult = ContactSchema.safeParse(body);
     
