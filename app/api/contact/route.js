@@ -3,17 +3,9 @@ import { NextResponse } from "next/server";
 import dns from "dns";
 import { promisify } from "util";
 import { ContactSchema } from "@/lib/schema";
-import { Redis } from "@upstash/redis";
-import { Ratelimit } from "@upstash/ratelimit";
+import { ratelimit } from "@/lib/ratelimiter";
 
 const resolveMx = promisify(dns.resolveMx);
-
-// Initialize Upstash Rate Limiter
-const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(5, "1 m"), // 5 requests per minute
-  analytics: true,
-});
 
 export function generateEmailHtml(name) {
   return `
@@ -187,15 +179,16 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
-    const clientIp = ip.split(",")[0].trim();
-    
+    // Securely extract the real client IP (works on Vercel, VPS, and Local)
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : (request.ip ?? "127.0.0.1");
     // Check Rate Limiter
-    const { success, limit, remaining, reset } = await ratelimit.limit(`api_rate_limit:${clientIp}`);
+    const { success, limit, remaining, reset } = await ratelimit.limit(ip);
+    console.log(limit, remaining, reset);
     if (!success) {
       return NextResponse.json(
         { status: 429, message: "Too many requests. Please try again later." },
-        { 
+        {
           status: 429,
           headers: {
             "X-RateLimit-Limit": limit.toString(),
@@ -208,14 +201,14 @@ export async function POST(request) {
 
     const body = await request.json();
     const parseResult = ContactSchema.safeParse(body);
-    
+
     if (!parseResult.success) {
       return NextResponse.json(
         { status: 400, message: "Validation failed", errors: parseResult.error.flatten().fieldErrors },
         { status: 400 }
       );
     }
-    
+
     const { name, email, niche, country, desc } = parseResult.data;
 
     const domain = email.split("@")[1];
