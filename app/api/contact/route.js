@@ -179,12 +179,15 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    // Securely extract the real client IP (works on Vercel, VPS, and Local)
-    const forwardedFor = request.headers.get("x-forwarded-for");
-    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : (request.ip ?? "127.0.0.1");
+    // Securely extract the real client IP (works behind Cloudflare, Nginx, Vercel, VPS)
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim()
+      || request.headers.get("x-real-ip")
+      || request.headers.get("cf-connecting-ip")
+      || request.ip
+      || "127.0.0.1";
     // Check Rate Limiter
     const { success, limit, remaining, reset } = await ratelimit.limit(ip);
-    console.log(limit, remaining, reset);
+    console.log(limit, remaining, reset, ip);
     if (!success) {
       return NextResponse.json(
         { status: 429, message: "Too many requests. Please try again later." },
@@ -194,6 +197,7 @@ export async function POST(request) {
             "X-RateLimit-Limit": limit.toString(),
             "X-RateLimit-Remaining": remaining.toString(),
             "X-RateLimit-Reset": reset.toString(),
+            "X-Detected-IP": ip,
           }
         }
       );
@@ -249,7 +253,10 @@ export async function POST(request) {
       throw new Error("User confirmation email was rejected by the mail server.");
     }
 
-    return NextResponse.json({ status: 200, message: "Message sent successfully" });
+    return NextResponse.json(
+      { status: 200, message: "Message sent successfully" },
+      { headers: { "X-Detected-IP": ip } }
+    );
   } catch (error) {
     console.error("Error sending email:", error);
     return NextResponse.json(
