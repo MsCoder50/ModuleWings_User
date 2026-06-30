@@ -187,7 +187,6 @@ export async function POST(request) {
       || "127.0.0.1";
     // Check Rate Limiter
     const { success, limit, remaining, reset } = await ratelimit.limit(ip);
-    console.log(limit, remaining, reset, ip);
     if (!success) {
       return NextResponse.json(
         { status: 429, message: "Too many requests. Please try again later." },
